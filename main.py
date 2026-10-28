@@ -1,4 +1,6 @@
+from Config.Config import Config
 from Queue.queue import Queue
 
-queue = Queue()
+config = Config()
+queue = Queue(config)
 queue.start()

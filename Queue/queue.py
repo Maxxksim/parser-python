@@ -3,11 +3,12 @@ import random
 import signal
 import time
 
+from Config.Config import Config
 
 class Queue:
 
-    def __init__(self):
-        self._numberProcesses : int = 10
+    def __init__(self, config : Config):
+        self._numberProcesses : int = config.NUMBER_PROCESSES
         self._shouldStop : bool = False
         self._processes : list = []
 
