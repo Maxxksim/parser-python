@@ -17,6 +17,7 @@ class DbConfig(Settings):
         return URL.create(
             drivername=self.db_driver,
             username=self.db_username,
+            password=self.db_password,
             host=self.db_host,
             port=self.db_port,
             database=self.db_database,
