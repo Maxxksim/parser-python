@@ -13,4 +13,4 @@ class Question(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     question: Mapped[str] = mapped_column(String(500), unique=True)
-    answers: Mapped[list["Answer"]] = relationship(secondary="answer_question", back_populates="answers")
+    answers: Mapped[list["Answer"]] = relationship(secondary="answer_question", back_populates="questions")
