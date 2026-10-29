@@ -2,13 +2,13 @@ import os
 import random
 import signal
 import time
+from config.queue_config import QueueConfig
 
-from config.app_config import Config
 
 class Queue:
 
-    def __init__(self, config : Config):
-        self._numberProcesses : int = config.queue.number_processes
+    def __init__(self, config : QueueConfig):
+        self._numberProcesses : int = config.number_processes
         self._shouldStop : bool = False
         self._processes : list = []
 
