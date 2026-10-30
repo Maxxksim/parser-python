@@ -10,5 +10,5 @@ class Db:
         self._session = self._session_maker()
 
     @property
-    def session(self):
+    def connection(self):
         return self._session
