@@ -1,9 +1,11 @@
 from scrapy.crawler import CrawlerProcess
 from database.rd import Rd
+from parsing.middleware.proxy_middleware import ProxyMiddleware
 from parsing.pipelines.collect_parsed_data_pipeline import CollectParsedDataPipeline
 from parsing.spiders.parse_links_spider import ParseLinksSpider
 from parsing.pipelines.fill_queue_pipeline import FillQueuePipeline
 from parsing.spiders.parse_qa_spider import ParseQA
+from request.proxy import Proxy
 
 BASE_URL = 'https://www.kreuzwort-raetsel.net/'
 NOT_FOUND_QUESTION = 'Die Suche hat leider keine Ergebnisse.'
@@ -11,9 +13,10 @@ NOT_FOUND_QUESTION = 'Die Suche hat leider keine Ergebnisse.'
 
 class Parser:
 
-    def __init__(self, redis: Rd):
+    def __init__(self, redis: Rd, proxy : Proxy):
         self._redis = redis
-        #self.fill_queue()
+        # self.fill_queue()
+        self._proxy = proxy
 
     def fill_queue(self):
         self.__run_spider({
@@ -28,10 +31,12 @@ class Parser:
         process.crawl(spider, **kwargs)
         process.start()
 
-    def parse(self, link: str):
+    def parse(self):
         self.__run_spider({
             "ITEM_PIPELINES": {CollectParsedDataPipeline: 100},
-            "REDIS": self._redis
+            "DOWNLOADER_MIDDLEWARES": {ProxyMiddleware: 100},
         },
             ParseQA,
-            link=link)
+            redis=self._redis,
+            proxy=self._proxy,
+        )
