@@ -7,7 +7,7 @@ from database.rd import Rd
 class CollectParsedDataPipeline:
 
     def __init__(self):
-        self.collectedData = defaultdict(list)
+        self.collectedData = defaultdict(dict)
 
     def close_spider(self, spider):
         link = next(iter(self.collectedData))
@@ -16,9 +16,6 @@ class CollectParsedDataPipeline:
         spider.redis_client.close()
 
     def process_item(self, item, spider):
-        self.collectedData[item['link']].append({
-            "question": item['question'],
-            "answers": item['answers'],
-        })
+        self.collectedData[item['link']][item['question']] = item['answers']
 
         return item
