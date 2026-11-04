@@ -2,6 +2,7 @@ from urllib.parse import quote
 from scrapy import Request, signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.linkextractors import LinkExtractor
+from scrapy.settings.default_settings import DOWNLOAD_DELAY, AUTOTHROTTLE_ENABLED
 from scrapy.spiders import CrawlSpider, Rule
 from database.rd import Rd
 
@@ -11,6 +12,11 @@ class ParseQA(CrawlSpider):
     BASE_URL = 'https://www.kreuzwort-raetsel.net/'
     NOT_FOUND_QUESTION = 'Die Suche hat leider keine Ergebnisse.'
     handle_httpstatus_list = [404]
+    MAX_ATTEMPTS = 3
+    custom_settings = {
+        DOWNLOAD_DELAY : 3,
+        AUTOTHROTTLE_ENABLED : True
+    }
 
     def __init__(self, redis: Rd, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -21,6 +27,7 @@ class ParseQA(CrawlSpider):
         Rule(
             LinkExtractor(restrict_css="table:not(#kxo) tr td.Question"),
             callback="parse_item",
+            errback='handle_error',
             follow=False,
         ),
     )
@@ -55,7 +62,7 @@ class ParseQA(CrawlSpider):
 
         self.link = link.decode()
 
-        self.crawler.engine.crawl(Request(self.link))
+        self.crawler.engine.crawl(Request(link.decode()))
         raise DontCloseSpider
 
     @staticmethod
@@ -108,3 +115,19 @@ class ParseQA(CrawlSpider):
             response = await self.crawler.engine.download_async(request)
 
         return answers
+
+    def handle_error(self, failure):
+        link = failure.request.url
+        attempt = self.redis_client.hincrby('queue:attempts', link, 1)
+        pipe = self.redis_client.pipeline(transaction=True)
+
+        if attempt >= self.MAX_ATTEMPTS:
+            pipe.sadd("set:failed:links", link)
+            pipe.lrem("queue:processing", 1, link)
+            pipe.srem("set:processing", link)
+            pipe.hdel("queue:attempts", link)
+        else:
+            pipe.redis_client.lpush('queue', link)
+            pipe.redis_client.lrem('queue:processing', 1 , link)
+
+        pipe.execute()
