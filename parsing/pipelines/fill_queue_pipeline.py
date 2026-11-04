@@ -1,3 +1,5 @@
+from typing import Any
+
 from database.rd import Rd
 
 
@@ -12,18 +14,18 @@ class FillQueuePipeline:
             redis=crawler.settings.get("REDIS"),
         )
 
-    def open_spider(self, spider):
+    def open_spider(self):
         self.redis_client = self.redis.get_client()
 
     def close_spider(self, spider):
         self.redis_client.close()
 
-    def process_item(self, item, spider):
+    def process_item(self, item) -> dict[str, Any]:
         new_links = self.__get_only_new_link(item["links"])
 
         if new_links:
             self.redis_client.lpush("queue", *new_links)
-            self.redis_client.sadd("set:processing:links")
+            self.redis_client.sadd("set:processing:links", *new_links)
         return item
 
     def __get_only_new_link(self, links: list) -> list[str]:
