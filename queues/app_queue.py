@@ -28,8 +28,8 @@ class Queue:
             os.kill(pid, signal.SIGTERM)
 
     def start(self) -> None:
-
-        self.__move_to_main_queue()
+        self.__move_links_to_queue()
+        #self._parser.fill_queue()
 
         for i in range(self.__get_number_processes()):
             self._processes.append(self.__create_process('parsing'))
@@ -46,33 +46,43 @@ class Queue:
 
         if pid == 0:
             self._processes = []
+            parser = self._parser.get_new_instance()
 
-            while not self._shouldStop:
-                if processes_type == 'parsing':
-                    self._parser.parse()
-                elif processes_type == 'saving':
-                    redis_client = self._redis.get_client()
+            if processes_type == 'parsing':
+                redis_client = self._redis.get_client()
+
+                while not self._shouldStop :
+
+                    if redis_client.llen("queue") == 0 and redis_client.llen("queue:processing") == 0:
+                        break
+                    parser.start_parsing_links()
+
+            elif processes_type == 'saving':
+                redis_client = self._redis.get_client()
+
+                while not self._shouldStop:
+
+                    if redis_client.llen("queue:parsed:data") == 0 and redis_client.llen("queue:processing") == 0:
+                        break
 
                     if not (parsed_data := redis_client.brpop('queue:parsed:data', 30)):
                         continue
 
                     try:
-                        link = self._controller.save_data(parsed_data[0])
+                        link = self._controller.save_data(parsed_data[1])
                         pipe = redis_client.pipeline(transaction=True)
                         pipe.srem('set:processing', link)
                         pipe.lrem('queue:processing', 1, link)
                         pipe.execute()
                     except RuntimeError:
                         redis_client.lpush('queue:parsed:data', parsed_data[1])
-
             os._exit(0)
-
         return pid
 
     def __get_number_processes(self):
         return self._numberProcesses + self.SAVING_PROCESS
 
-    def __move_to_main_queue(self):
+    def __move_links_to_queue(self):
         redis_client = self._redis.get_client()
         count = redis_client.llen('queue:processing')
 
