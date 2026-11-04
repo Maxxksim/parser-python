@@ -14,6 +14,6 @@ class ParseLinksSpider(CrawlSpider):
     )
 
     @staticmethod
-    def parse_item(response):
+    def parse_item(self, response):
         hrefs = response.css('ul.dnrg li a::attr(href)').getall()
-        yield {"urls": [response.urljoin(href) for href in hrefs]}
+        yield {"links": [response.urljoin(href) for href in hrefs]}
