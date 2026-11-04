@@ -8,11 +8,12 @@ from parsing.parser import Parser
 
 
 class Queue:
-    SAVING_PROCESS: int = 1
+    DEFAULT_PROCESS: int = 1
+
 
     def __init__(self, config: QueueConfig, parser: Parser, redis: Rd, controller: ParsedDataController):
-        self._numberProcesses: int = config.number_processes
-        self._shouldStop: bool = False
+        self._number_processes: int = config.number_processes
+        self._should_stop: bool = False
         self._processes: list = []
         self._parser: Parser = parser
         self._redis: Rd = redis
@@ -23,19 +24,18 @@ class Queue:
         signal.signal(signal.SIGHUP, self.__handler)
 
     def __handler(self, signum, frame) -> None:
-        self._shouldStop = True
+        self._should_stop = True
         for pid in list(self._processes):
             os.kill(pid, signal.SIGTERM)
 
     def start(self) -> None:
         self.__move_links_to_queue()
-        #self._parser.fill_queue()
+        # self._parser.fill_queue()
 
         for i in range(self.__get_number_processes()):
             self._processes.append(self.__create_process('parsing'))
 
-            if i == self.__get_number_processes() - self.SAVING_PROCESS:
-                self._processes.append(self.__create_process('saving'))
+        self._processes.append(self.__create_process('saving'))
 
         while self._processes:
             pid, status = os.wait()
@@ -46,23 +46,21 @@ class Queue:
 
         if pid == 0:
             self._processes = []
-            parser = self._parser.get_new_instance()
 
             if processes_type == 'parsing':
-                redis_client = self._redis.get_client()
-
-                while not self._shouldStop :
-
-                    if redis_client.llen("queue") == 0 and redis_client.llen("queue:processing") == 0:
-                        break
-                    parser.start_parsing_links()
+                parser = self._parser.get_new_instance()
+                parser.start_parsing_links()
 
             elif processes_type == 'saving':
                 redis_client = self._redis.get_client()
 
-                while not self._shouldStop:
+                while not self._should_stop:
 
-                    if redis_client.llen("queue:parsed:data") == 0 and redis_client.llen("queue:processing") == 0:
+                    if (
+                            redis_client.llen("queue") == 0 and
+                            redis_client.llen("queue:parsed:data") == 0 and
+                            redis_client.llen("queue:processing") == 0
+                    ):
                         break
 
                     if not (parsed_data := redis_client.brpop('queue:parsed:data', 30)):
@@ -77,10 +75,14 @@ class Queue:
                     except RuntimeError:
                         redis_client.lpush('queue:parsed:data', parsed_data[1])
             os._exit(0)
+
         return pid
 
-    def __get_number_processes(self):
-        return self._numberProcesses + self.SAVING_PROCESS
+    def __get_number_processes(self) -> int:
+        if self._number_processes <= 0:
+            return self.DEFAULT_PROCESS
+
+        return self._number_processes
 
     def __move_links_to_queue(self):
         redis_client = self._redis.get_client()
