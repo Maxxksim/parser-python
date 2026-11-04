@@ -1,21 +1,22 @@
 import json
 from collections import defaultdict
 
-from database.rd import Rd
-
 
 class CollectParsedDataPipeline:
 
-    def __init__(self):
-        self.collectedData = defaultdict(dict)
+    def __init__(self, crawler):
+        self.crawler = crawler
 
-    def close_spider(self, spider):
-        link = next(iter(self.collectedData))
-        spider.redis_client.lpush('queue:parsed:data', json.dumps(self.collectedData))
-        spider.redis_client.sadd('set:parsed:links', link)
-        spider.redis_client.close()
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
 
-    def process_item(self, item, spider):
-        self.collectedData[item['link']][item['question']] = item['answers']
+    def close_spider(self) -> None:
+        self.crawler.spider.redis_client.close()
 
+    def process_item(self, item) -> dict:
+        spider = self.crawler.spider
+
+        if item["link"] == spider.link:
+            spider.collected_data[item["question"]] = item["answers"]
         return item

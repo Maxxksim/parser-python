@@ -1,10 +1,13 @@
+from collections import defaultdict
 from urllib.parse import quote
 from scrapy import Request, signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.linkextractors import LinkExtractor
-from scrapy.settings.default_settings import DOWNLOAD_DELAY, AUTOTHROTTLE_ENABLED
 from scrapy.spiders import CrawlSpider, Rule
+from twisted.python.failure import Failure
+
 from database.rd import Rd
+import json
 
 
 class ParseQA(CrawlSpider):
@@ -14,14 +17,16 @@ class ParseQA(CrawlSpider):
     handle_httpstatus_list = [404]
     MAX_ATTEMPTS = 3
     custom_settings = {
-        DOWNLOAD_DELAY : 3,
-        AUTOTHROTTLE_ENABLED : True
+        "DOWNLOAD_DELAY": 3,
+        "AUTOTHROTTLE_ENABLED": True,
+        "TELNETCONSOLE_ENABLED": False,
     }
 
     def __init__(self, redis: Rd, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.redis_client = redis.get_client()
         self.link = None
+        self.collected_data = defaultdict(dict)
 
     rules = (
         Rule(
@@ -52,7 +57,18 @@ class ParseQA(CrawlSpider):
     def parsed_item(self, question, answers):
         return {"question": question, "answers": answers, "link": self.link}
 
+    def __add_parsed_data(self):
+        if self.link is None:
+            return
+        pipe = self.redis_client.pipeline(transaction=True)
+        pipe.lpush("queue:parsed:data", json.dumps({self.link: self.collected_data}))
+        pipe.sadd("set:parsed:links", self.link)
+        pipe.execute()
+        self.link = None
+        self.collected_data.clear()
+
     def spider_idle(self):
+        self.__add_parsed_data()
         link = self.redis_client.lmove(
             'queue', 'queue:processing', src='RIGHT', dest='LEFT',
         )
@@ -62,7 +78,7 @@ class ParseQA(CrawlSpider):
 
         self.link = link.decode()
 
-        self.crawler.engine.crawl(Request(link.decode()))
+        self.crawler.engine.crawl(Request(self.link, errback=self.handle_error, dont_filter=True))
         raise DontCloseSpider
 
     @staticmethod
@@ -116,8 +132,12 @@ class ParseQA(CrawlSpider):
 
         return answers
 
-    def handle_error(self, failure):
-        link = failure.request.url
+    def handle_error(self, failure: Failure) -> None:
+        link = self.link
+        if link is None:
+            return
+        self.link = None
+        self.collected_data.clear()
         attempt = self.redis_client.hincrby('queue:attempts', link, 1)
         pipe = self.redis_client.pipeline(transaction=True)
 
@@ -127,7 +147,7 @@ class ParseQA(CrawlSpider):
             pipe.srem("set:processing", link)
             pipe.hdel("queue:attempts", link)
         else:
-            pipe.redis_client.lpush('queue', link)
-            pipe.redis_client.lrem('queue:processing', 1 , link)
+            pipe.lpush('queue', link)
+            pipe.lrem('queue:processing', 1, link)
 
         pipe.execute()
