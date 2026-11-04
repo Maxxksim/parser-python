@@ -13,7 +13,6 @@ class Parser:
     def __init__(self, redis: Rd, proxy: Proxy):
         self._redis = redis
         self._proxy = proxy
-        self.fill_queue()
 
     def fill_queue(self):
         self.__run_spider({
@@ -28,7 +27,7 @@ class Parser:
         process.crawl(spider, **kwargs)
         process.start()
 
-    def parse(self):
+    def start_parsing_links(self):
         self.__run_spider({
             "ITEM_PIPELINES": {CollectParsedDataPipeline: 100},
             "DOWNLOADER_MIDDLEWARES": {ProxyMiddleware: 100},
@@ -37,3 +36,6 @@ class Parser:
             redis=self._redis,
             proxy=self._proxy,
         )
+
+    def get_new_instance(self) -> "Parser":
+        return type(self)(self._redis, self._proxy)
