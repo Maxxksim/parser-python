@@ -1,3 +1,5 @@
+from typing import Any, Generator
+
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 
@@ -14,6 +16,6 @@ class ParseLinksSpider(CrawlSpider):
     )
 
     @staticmethod
-    def parse_item(self, response):
+    def parse_item(response) -> Generator[dict[str, list[Any]], Any, None]:
         hrefs = response.css('ul.dnrg li a::attr(href)').getall()
         yield {"links": [response.urljoin(href) for href in hrefs]}
