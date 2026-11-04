@@ -7,4 +7,4 @@ class Rd:
         self.url = config.url
 
     def get_client(self):
-        return redis.Redis.from_url(self.url)
+        return redis.Redis.from_url(self.url, socket_timeout=40)
