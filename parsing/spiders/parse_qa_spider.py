@@ -1,13 +1,12 @@
 import os
 from collections import defaultdict
-from typing import AsyncGenerator, Self
+from typing import AsyncGenerator
 from urllib.parse import quote
-
 from Logs.logger import Logger
 from scrapy import Request, signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import CrawlSpider, Rule, Spider
+from scrapy.spiders import CrawlSpider, Rule
 from twisted.python.failure import Failure
 
 from database.rd import Rd

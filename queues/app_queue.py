@@ -1,7 +1,6 @@
 import os
 import signal
 from Logs.logger import Logger
-from config.logger_config import LoggerConfig
 from config.queue_config import QueueConfig
 from controller.parsed_data_controller import ParsedDataController
 from database.rd import Rd
