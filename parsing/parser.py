@@ -7,16 +7,13 @@ from parsing.pipelines.fill_queue_pipeline import FillQueuePipeline
 from parsing.spiders.parse_qa_spider import ParseQA
 from request.proxy import Proxy
 
-BASE_URL = 'https://www.kreuzwort-raetsel.net/'
-NOT_FOUND_QUESTION = 'Die Suche hat leider keine Ergebnisse.'
-
 
 class Parser:
 
-    def __init__(self, redis: Rd, proxy : Proxy):
+    def __init__(self, redis: Rd, proxy: Proxy):
         self._redis = redis
-        # self.fill_queue()
         self._proxy = proxy
+        self.fill_queue()
 
     def fill_queue(self):
         self.__run_spider({
