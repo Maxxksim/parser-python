@@ -1,9 +1,10 @@
 from collections import defaultdict
+from typing import AsyncGenerator, Self
 from urllib.parse import quote
 from scrapy import Request, signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders import CrawlSpider, Rule, Spider
 from twisted.python.failure import Failure
 
 from database.rd import Rd
@@ -43,21 +44,20 @@ class ParseQA(CrawlSpider):
         crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
         return spider
 
-    async def parse_item(self, response):
+    async def parse_item(self, response) -> AsyncGenerator[dict]:
         question = response.meta.get("link_text")
 
         if response.status == 404 or response.css('span[data-lf="more"]:not([hidden])'):
-            answers = await self.make_searching_question(question)
+            answers = await self.__make_searching_question(question)
         else:
-            answers = self.get_answers_with_lengths(response)
+            answers = self.__get_answers_with_lengths(response)
 
-        if answers:
-            yield self.parsed_item(question, answers)
+        yield self.parsed_item(question, answers)
 
     def parsed_item(self, question, answers):
         return {"question": question, "answers": answers, "link": self.link}
 
-    def __add_parsed_data(self):
+    def __add_parsed_data(self) -> None:
         if self.link is None:
             return
         pipe = self.redis_client.pipeline(transaction=True)
@@ -82,11 +82,11 @@ class ParseQA(CrawlSpider):
         raise DontCloseSpider
 
     @staticmethod
-    def make_url_to_search_question(question):
+    def __make_url_to_search_question(question) -> str:
         return f"https://www.kreuzwort-raetsel.net/suche.php?s={quote(question, safe='')}&field=0&go=suchen#suchbox"
 
     @staticmethod
-    def get_answers_with_lengths(response, question_for_comparing=None):
+    def __get_answers_with_lengths(response, question_for_comparing=None) -> list[str]:
         result = []
 
         for tr in response.css("tr"):
@@ -107,9 +107,9 @@ class ParseQA(CrawlSpider):
             })
         return result
 
-    async def make_searching_question(self, question):
+    async def __make_searching_question(self, question) -> list[str] | None:
         response = await self.crawler.engine.download_async(
-            Request(self.make_url_to_search_question(question))
+            Request(self.__make_url_to_search_question(question))
         )
 
         searched_result = response.css("form div#SearchresultsCounter strong::text").get()
@@ -120,7 +120,7 @@ class ParseQA(CrawlSpider):
         answers = []
 
         while True:
-            answers.extend(self.get_answers_with_lengths(response, question))
+            answers.extend(self.__get_answers_with_lengths(response, question))
 
             next_url = response.css("tfoot td ul.Pagination li.Next a::attr(href)").get()
 
@@ -132,7 +132,7 @@ class ParseQA(CrawlSpider):
 
         return answers
 
-    def handle_error(self, failure: Failure) -> None:
+    def __handle_error(self, failure: Failure) -> None:
         link = self.link
         if link is None:
             return

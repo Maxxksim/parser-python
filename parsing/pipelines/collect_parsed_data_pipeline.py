@@ -1,22 +1,21 @@
 import json
 from collections import defaultdict
+from typing import Self
 
 
 class CollectParsedDataPipeline:
 
     def __init__(self, crawler):
-        self.crawler = crawler
+        self.__spider = crawler.spider
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler) -> Self:
         return cls(crawler)
 
     def close_spider(self) -> None:
-        self.crawler.spider.redis_client.close()
+        self.__spider.redis_client.close()
 
     def process_item(self, item) -> dict:
-        spider = self.crawler.spider
-
-        if item["link"] == spider.link:
-            spider.collected_data[item["question"]] = item["answers"]
+        if item["link"] == self.__spider.link:
+            self.__spider.collected_data[item["question"]] = item["answers"]
         return item
