@@ -14,4 +14,4 @@ parser = Parser(redis, proxy)
 controller = ParsedDataController(db)
 queue = Queue(config.queue, parser, redis, controller)
 queue.start()
-parser.parse()
+
