@@ -1,6 +1,9 @@
+import os
 from collections import defaultdict
 from typing import AsyncGenerator, Self
 from urllib.parse import quote
+
+from Logs.logger import Logger
 from scrapy import Request, signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.linkextractors import LinkExtractor
@@ -23,17 +26,18 @@ class ParseQA(CrawlSpider):
         "TELNETCONSOLE_ENABLED": False,
     }
 
-    def __init__(self, redis: Rd, *args, **kwargs):
+    def __init__(self, redis: Rd, logger: Logger, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.redis_client = redis.get_client()
         self.link = None
         self.collected_data = defaultdict(dict)
+        self.__logger = logger
 
     rules = (
         Rule(
             LinkExtractor(restrict_css="table:not(#kxo) tr td.Question"),
             callback="parse_item",
-            errback='handle_error',
+            errback="__handle_error",
             follow=False,
         ),
     )
@@ -64,6 +68,11 @@ class ParseQA(CrawlSpider):
         pipe.lpush("queue:parsed:data", json.dumps({self.link: self.collected_data}))
         pipe.sadd("set:parsed:links", self.link)
         pipe.execute()
+        self.__logger.log.info(
+            "PARSER MESSAGE (PARSING): process %s started parsing link: %s.",
+            os.getppid(),
+            self.link,
+        )
         self.link = None
         self.collected_data.clear()
 
@@ -74,11 +83,17 @@ class ParseQA(CrawlSpider):
         )
 
         if link is None:
+            self.__logger.log.info("QUEUE MESSAGE (PARSING): Queue is empty.")
             return
 
+        self.__logger.log.info(
+            "PARSER MESSAGE (PARSING): process %s started parsing link: %s.",
+            os.getppid(),
+            link.decode(),
+        )
         self.link = link.decode()
 
-        self.crawler.engine.crawl(Request(self.link, errback=self.handle_error, dont_filter=True))
+        self.crawler.engine.crawl(Request(self.link, errback=self.__handle_error, dont_filter=True))
         raise DontCloseSpider
 
     @staticmethod
@@ -134,6 +149,7 @@ class ParseQA(CrawlSpider):
 
     def __handle_error(self, failure: Failure) -> None:
         link = self.link
+
         if link is None:
             return
         self.link = None
@@ -146,6 +162,11 @@ class ParseQA(CrawlSpider):
             pipe.lrem("queue:processing", 1, link)
             pipe.srem("set:processing", link)
             pipe.hdel("queue:attempts", link)
+            self.__logger.log.error(
+                "PARSER MESSAGE (PARSING): Error: link %s haven\'t been parsed after %s attempts.",
+                link,
+                self.MAX_ATTEMPTS,
+            )
         else:
             pipe.lpush('queue', link)
             pipe.lrem('queue:processing', 1, link)

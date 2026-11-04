@@ -13,7 +13,7 @@ class FillQueuePipeline:
             redis=crawler.settings.get("REDIS"),
         )
 
-    def close_spider(self, spider) -> None:
+    def close_spider(self) -> None:
         self.__redis_client.close()
 
     def process_item(self, item) -> dict[str, Any]:

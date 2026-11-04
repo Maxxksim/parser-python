@@ -1,3 +1,4 @@
+from Logs.logger import Logger
 from config.app_config import Config
 from controller.parsed_data_controller import ParsedDataController
 from database.db import Db
@@ -10,8 +11,10 @@ config = Config()
 db = Db(config.db)
 redis = Rd(config.redis)
 proxy = Proxy(config.proxy)
-parser = Parser(redis, proxy)
+logger = Logger(config.logger)
+parser = Parser(redis, proxy, logger)
 controller = ParsedDataController(db)
-queue = Queue(config.queue, parser, redis, controller)
+
+queue = Queue(config.queue, parser, redis, controller, logger)
 queue.start()
 

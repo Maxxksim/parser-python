@@ -1,3 +1,4 @@
+from Logs.logger import Logger
 from scrapy.crawler import CrawlerProcess
 from database.rd import Rd
 from parsing.middleware.proxy_middleware import ProxyMiddleware
@@ -10,9 +11,10 @@ from request.proxy import Proxy
 
 class Parser:
 
-    def __init__(self, redis: Rd, proxy: Proxy):
+    def __init__(self, redis: Rd, proxy: Proxy, logger: Logger):
         self.__redis = redis
         self.__proxy = proxy
+        self.__logger = logger
 
     def fill_queue(self):
         self.__run_spider({
@@ -23,7 +25,7 @@ class Parser:
         )
 
     def __run_spider(self, settings: dict, spider, **kwargs) -> None:
-        process = CrawlerProcess(settings=settings)
+        process = CrawlerProcess(settings={**settings, **self.__default_setting})
         process.crawl(spider, **kwargs)
         process.start()
 
@@ -35,7 +37,20 @@ class Parser:
             ParseQA,
             redis=self.__redis,
             proxy=self.__proxy,
+            logger=self.__logger,
         )
 
     def get_new_instance(self) -> "Parser":
-        return type(self)(self.__redis, self.__proxy)
+        return type(self)(self.__redis, self.__proxy, self.__logger)
+
+    def __define_log_mode(self) -> str | None:
+        if self.__logger.log_mode == 'file':
+            return self.__logger.logs_path
+
+        return None
+
+    @property
+    def __default_setting(self):
+        return {
+            "LOG_FILE": self.__define_log_mode()
+        }
