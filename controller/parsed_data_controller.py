@@ -43,7 +43,7 @@ class ParsedDataController:
                         'answer_id': answer_id,
                     })
 
-                self._db.connection.execute(insert(answer_question), question_answers_ids).prefix_with("IGNORE")
+                self._db.connection.execute(insert(answer_question).prefix_with("IGNORE"), question_answers_ids)
 
         self._db.connection.commit()
 
