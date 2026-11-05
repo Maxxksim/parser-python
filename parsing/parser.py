@@ -19,7 +19,8 @@ class Parser:
     def fill_queue(self):
         self.__run_spider({
             "ITEM_PIPELINES": {FillQueuePipeline: 100},
-            "REDIS": self.__redis
+            "REDIS": self.__redis,
+            "DOWNLOADER_MIDDLEWARES": {ProxyMiddleware: 100},
         },
             ParseLinksSpider,
         )
