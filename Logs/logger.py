@@ -1,7 +1,5 @@
 import logging
 import sys
-from logging.handlers import RotatingFileHandler
-
 from config.logger_config import LoggerConfig
 
 
