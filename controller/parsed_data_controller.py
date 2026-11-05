@@ -11,6 +11,12 @@ class ParsedDataController:
         self.__db = db
 
     def save_data(self, data: str) -> str:
+        """
+        Insert parsed data to database.
+
+        :param data:
+        :return: link of page is from which the data is parsed
+        """
         converted_data = json.loads(data)
 
         for questions in converted_data.values():

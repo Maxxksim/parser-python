@@ -9,7 +9,6 @@ class ParseLinksSpider(CrawlSpider):
     name = "PARSE LINKS SPIDER"
     allowed_domains = ["www.kreuzwort-raetsel.net"]
     start_urls = [START_URL]
-    custom_settings = {'DOWNLOAD_DELAY': 3}
 
     rules = (
         Rule(LinkExtractor(restrict_css='ul.dnrg'), callback='parse_item', follow=False),
@@ -17,5 +16,11 @@ class ParseLinksSpider(CrawlSpider):
 
     @staticmethod
     def parse_item(response) -> Generator[dict[str, list[Any]], Any, None]:
+        """
+        Make parsing of links each contains a page where are located questions.
+
+        :param response:
+        :return: generator of dicts each with parsed links
+        """
         hrefs = response.css('ul.dnrg li a::attr(href)').getall()
         yield {"links": [response.urljoin(href) for href in hrefs]}

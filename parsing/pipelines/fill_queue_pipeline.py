@@ -9,14 +9,31 @@ class FillQueuePipeline:
 
     @classmethod
     def from_crawler(cls, crawler) -> Self:
+        """
+        Getting transferred data from spider.
+
+        :param crawler:
+        :return: instance of itself
+        """
         return cls(
             redis=crawler.settings.get("REDIS"),
         )
 
     def close_spider(self) -> None:
+        """
+        Close Redis connection.
+
+        :return: None
+        """
         self.__redis_client.close()
 
     def process_item(self, item) -> dict[str, Any]:
+        """
+        Push new parsed links to queue.
+
+        :param item:
+        :return: dict of parsed links
+        """
         new_links = self.__get_only_new_link(item["links"])
 
         if new_links:

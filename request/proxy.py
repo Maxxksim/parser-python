@@ -9,7 +9,14 @@ class Proxy:
         self.__proxy_list = config.proxy_list
         self.__index_next_proxy = 0
 
+
     def get_proxy(self) -> None:
+        """
+        Take proxy from proxy list and
+        increment index for the next proxy.
+
+        :return: str: one proxy
+        """
         if self.__index_next_proxy + 1 > len(self.__proxy_list):
             self.__index_next_proxy = 0
 

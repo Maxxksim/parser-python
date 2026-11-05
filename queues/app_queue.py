@@ -33,6 +33,12 @@ class Queue:
             os.kill(pid, signal.SIGTERM)
 
     def start(self) -> None:
+        """
+        Run processes for filling queue, parsing and saving links
+        and cycle which waits for closing parsing, saving processes.
+
+        :return: None
+        """
         self.__move_links_to_queue()
 
         pid_filling_queue_process = self.__create_process('filling_queue')

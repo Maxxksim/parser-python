@@ -11,9 +11,21 @@ class ProxyMiddleware:
 
     @classmethod
     def from_crawler(cls, crawler) -> Self:
+        """
+        Getting transferred data from spider.
+
+        :param crawler:
+        :return: instance of itself
+         """
         return cls(crawler)
 
     def process_request(self, request) -> None:
+        """
+        Set proxy for request.
+
+        :param request:
+        :return: None
+        """
         if self.__proxy is None:
             self.__proxy = self.__spider.proxy
             self.__auth = basic_auth_header(self.__proxy.username, self.__proxy.password)

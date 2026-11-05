@@ -16,7 +16,12 @@ class Parser:
         self.__proxy = proxy
         self.__logger = logger
 
-    def fill_queue(self):
+    def fill_queue(self) -> None:
+        """
+        Run spider for scraping links and pushing them to queue.
+
+        :return: None
+        """
         self.__run_spider({
             "ITEM_PIPELINES": {FillQueuePipeline: 100},
             "REDIS": self.__redis,
@@ -32,6 +37,12 @@ class Parser:
         process.start()
 
     def start_parsing_links(self) -> None:
+        """
+        Run spider for parsing questions with answers and
+        pushing result to queue for parsed data.
+
+        :return: None
+        """
         self.__run_spider({
             "ITEM_PIPELINES": {CollectParsedDataPipeline: 100},
             "DOWNLOADER_MIDDLEWARES": {ProxyMiddleware: 100},
