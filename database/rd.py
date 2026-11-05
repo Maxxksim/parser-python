@@ -1,5 +1,6 @@
 from config.redis_config import RedisConfig
 import redis
+from redis.maint_notifications import MaintNotificationsConfig
 
 
 class Rd:
@@ -7,4 +8,4 @@ class Rd:
         self.__url = config.url
 
     def get_client(self):
-        return redis.Redis.from_url(self.__url, socket_timeout=40)
+        return redis.Redis.from_url(self.__url, socket_timeout=40, maint_notifications_config=MaintNotificationsConfig(enabled=False))
