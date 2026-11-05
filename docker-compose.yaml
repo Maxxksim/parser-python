@@ -10,30 +10,46 @@ services:
       - db_data:/var/lib/mysql
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}" ]
-      retries: 3
+      interval: 10s
       timeout: 5s
+      retries: 3
     ports:
       - "3306:3306"
 
   redis:
     image: redis:8.8
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDISCLI_AUTH: "${REDIS_PASSWORD}"
     volumes:
       - redis_data:/var/lib/redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   migrate:
     build:
       context: .
     working_dir: /app
     entrypoint: [ 'python3', './database/migrate.py' ]
+    depends_on:
+      db:
+        condition: service_healthy
 
   start-parser:
     build:
       context: .
     working_dir: /app
     entrypoint: [ 'python3', 'main.py' ]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   db_data:
