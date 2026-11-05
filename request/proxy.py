@@ -1,34 +1,37 @@
+import random
+
 from config.proxy_config import ProxyConfig
 
 
 class Proxy:
 
     def __init__(self, config: ProxyConfig):
-        self.__username = config.proxy_username
-        self.__password = config.proxy_password
-        self.__proxy_list = config.proxy_list
-        self.__index_next_proxy = 0
+        self.__config = config
+        self.__proxy_list = None
+        self.__last_proxy = None
 
-
-    def get_proxy(self) -> None:
+    def get_proxy(self) -> str:
         """
-        Take proxy from proxy list and
-        increment index for the next proxy.
+        Take random proxy from proxy list and
+        save last proxy.
 
-        :return: str: one proxy
+        :return: one random proxy from list
         """
-        if self.__index_next_proxy + 1 > len(self.__proxy_list):
-            self.__index_next_proxy = 0
 
-        proxy = self.__proxy_list[self.__index_next_proxy]
-        self.__index_next_proxy += 1
+        if not self.__proxy_list:
+            self.__proxy_list = self.__config.proxy_list.copy()
+            random.shuffle(self.__proxy_list)
 
-        return proxy
+            if len(self.__proxy_list) > 0 and self.__proxy_list[len(self.__proxy_list) - 1] == self.__last_proxy:
+                self.__proxy_list.insert(0, self.__proxy_list.pop())
+
+        self.__last_proxy = self.__proxy_list.pop()
+        return self.__last_proxy
 
     @property
     def username(self) -> str:
-        return self.__username
+        return self.__config.proxy_username
 
     @property
     def password(self) -> str:
-        return self.__password
+        return self.__config.proxy_password
