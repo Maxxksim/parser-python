@@ -26,11 +26,16 @@ class Queue:
         signal.signal(signal.SIGHUP, self.__stop_handler)
 
     def __stop_handler(self, signum, frame) -> None:
-        self.__logger.log.info("QUEUE MESSAGE (STOP): start stoping processes.")
+        if self.__should_stop:
+            return
         self.__should_stop = True
+        self.__logger.log.info("QUEUE MESSAGE (STOP): start stoping processes.")
 
         for pid in list(self.__processes):
-            os.kill(pid, signal.SIGTERM)
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                continue
 
     def start(self) -> None:
         """
@@ -76,6 +81,7 @@ class Queue:
         pid = os.fork()
 
         if pid == 0:
+            os.setsid()
             self.__processes = []
 
             if processes_type == 'parsing':
