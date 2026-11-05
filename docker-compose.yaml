@@ -23,6 +23,18 @@ services:
     ports:
       - "6379:6379"
 
+  migrate:
+    build:
+      context: .
+    working_dir: /app
+    entrypoint: [ 'python3', './database/migrate.py' ]
+
+  start-parser:
+    build:
+      context: .
+    working_dir: /app
+    entrypoint: [ 'python3', 'main.py' ]
+
 volumes:
   db_data:
   redis_data:
