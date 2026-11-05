@@ -20,8 +20,7 @@ class ParseQA(CrawlSpider):
     handle_httpstatus_list = [404]
     MAX_ATTEMPTS = 3
     custom_settings = {
-         "DOWNLOAD_DELAY": 3,
-         "AUTOTHROTTLE_ENABLED": True,
+        "AUTOTHROTTLE_ENABLED": True,
         "TELNETCONSOLE_ENABLED": False,
     }
 
