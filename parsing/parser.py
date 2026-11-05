@@ -1,4 +1,5 @@
 from Logs.logger import Logger
+from request import proxy
 from scrapy.crawler import CrawlerProcess
 from database.rd import Rd
 from parsing.middleware.proxy_middleware import ProxyMiddleware
@@ -23,6 +24,7 @@ class Parser:
             "DOWNLOADER_MIDDLEWARES": {ProxyMiddleware: 100},
         },
             ParseLinksSpider,
+            proxy=self.__proxy
         )
 
     def __run_spider(self, settings: dict, spider, **kwargs) -> None:
