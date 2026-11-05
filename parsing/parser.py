@@ -1,5 +1,4 @@
 from Logs.logger import Logger
-from request import proxy
 from scrapy.crawler import CrawlerProcess
 from database.rd import Rd
 from parsing.middleware.proxy_middleware import ProxyMiddleware
@@ -28,7 +27,7 @@ class Parser:
         )
 
     def __run_spider(self, settings: dict, spider, **kwargs) -> None:
-        process = CrawlerProcess(settings={**settings, **self.__default_setting})
+        process = CrawlerProcess(settings={**settings, **self.__default_settings})
         process.crawl(spider, **kwargs)
         process.start()
 
@@ -53,7 +52,7 @@ class Parser:
         return None
 
     @property
-    def __default_setting(self):
+    def __default_settings(self):
         return {
             "LOG_FILE": self.__define_log_mode()
         }
