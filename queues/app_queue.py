@@ -85,7 +85,7 @@ class Queue:
             elif processes_type == 'saving':
                 redis_client = self.__redis.get_client()
 
-                while not self.__should_stop:
+                while not self.__should_stop or redis_client.llen("queue:processing") > 0:
 
                     if (
                             redis_client.llen("queue") == 0 and
