@@ -20,8 +20,8 @@ class ParseQA(CrawlSpider):
     handle_httpstatus_list = [404]
     MAX_ATTEMPTS = 3
     custom_settings = {
-        "DOWNLOAD_DELAY": 3,
-        "AUTOTHROTTLE_ENABLED": True,
+         "DOWNLOAD_DELAY": 3,
+         "AUTOTHROTTLE_ENABLED": True,
         "TELNETCONSOLE_ENABLED": False,
     }
 
@@ -43,11 +43,25 @@ class ParseQA(CrawlSpider):
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
+        """
+        Get instance of spider and set closing signal for spider to prevent his closing.
+
+        :param crawler:
+        :param args:
+        :param kwargs:
+        :return: instance of spider
+        """
         spider = super().from_crawler(crawler, *args, **kwargs)
-        crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
+        crawler.signals.connect(spider.__spider_idle, signal=signals.spider_idle)
         return spider
 
     async def parse_item(self, response) -> AsyncGenerator[dict]:
+        """
+        Make parsing all questions with answers from page.
+
+        :param response:
+        :return: generator of dicts each with parsed question and its answers
+        """
         question = response.meta.get("link_text")
 
         if response.status == 404 or response.css('span[data-lf="more"]:not([hidden])'):
@@ -55,9 +69,9 @@ class ParseQA(CrawlSpider):
         else:
             answers = self.__get_answers_with_lengths(response)
 
-        yield self.parsed_item(question, answers)
+        yield self.__parsed_item(question, answers)
 
-    def parsed_item(self, question, answers):
+    def __parsed_item(self, question, answers) -> dict:
         return {"question": question, "answers": answers, "link": self.link}
 
     def __add_parsed_data(self) -> None:
@@ -75,7 +89,7 @@ class ParseQA(CrawlSpider):
         self.link = None
         self.collected_data.clear()
 
-    def spider_idle(self):
+    def __spider_idle(self) -> DontCloseSpider | None:
         self.__add_parsed_data()
         link = self.redis_client.lmove(
             'queue', 'queue:processing', src='RIGHT', dest='LEFT',
@@ -123,7 +137,7 @@ class ParseQA(CrawlSpider):
 
     async def __make_searching_question(self, question) -> list[str] | None:
         response = await self.crawler.engine.download_async(
-            Request(self.__make_url_to_search_question(question))
+            Request(self.__make_url_to_search_question(question), errback=self.__handle_error, dont_filter=True)
         )
 
         searched_result = response.css("form div#SearchresultsCounter strong::text").get()
