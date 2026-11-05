@@ -21,11 +21,11 @@ class Queue:
         self.__controller: ParsedDataController = controller
         self.__logger: Logger = logger
 
-        signal.signal(signal.SIGTERM, self.__handler)
-        signal.signal(signal.SIGINT, self.__handler)
-        signal.signal(signal.SIGHUP, self.__handler)
+        signal.signal(signal.SIGTERM, self.__stop_handler)
+        signal.signal(signal.SIGINT, self.__stop_handler)
+        signal.signal(signal.SIGHUP, self.__stop_handler)
 
-    def __handler(self, signum, frame) -> None:
+    def __stop_handler(self, signum, frame) -> None:
         self.__logger.log.info("QUEUE MESSAGE (STOP): start stoping processes.")
         self.__should_stop = True
 
