@@ -21,7 +21,7 @@ class FillQueuePipeline:
 
         if new_links:
             self.__redis_client.lpush("queue", *new_links)
-            self.__redis_client.sadd("set:processing:links", *new_links)
+            self.__redis_client.sadd("set:processing", *new_links)
         return item
 
     def __get_only_new_link(self, links: list) -> list[str]:
@@ -30,11 +30,13 @@ class FillQueuePipeline:
             return []
 
         result_parsed_check = self.__redis_client.smismember("set:parsed:links", links)
-        result_processing_check = self.__redis_client.smismember("set:processing:links", links)
+        result_processing_check = self.__redis_client.smismember("set:processing", links)
         new_links = []
 
         for url, parsed, processing in zip(links, result_parsed_check, result_processing_check):
-            if not parsed and not processing:
+            if parsed or processing:
+                continue
+            else:
                 new_links.append(url)
 
         return new_links
