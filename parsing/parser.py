@@ -1,4 +1,4 @@
-from Logs.logger import Logger
+from logs.logger import Logger
 from scrapy.crawler import CrawlerProcess
 from database.rd import Rd
 from parsing.middleware.proxy_middleware import ProxyMiddleware

@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from typing import AsyncGenerator
 from urllib.parse import quote
-from Logs.logger import Logger
+from logs.logger import Logger
 from scrapy import Request, signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.linkextractors import LinkExtractor
