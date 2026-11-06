@@ -5,3 +5,4 @@ scrapy==2.19.0
 SQLAlchemy==2.1.8
 Twisted==26.10.0
 w3lib==2.5.0
+PyMySQL
