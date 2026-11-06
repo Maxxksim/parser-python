@@ -13,6 +13,10 @@ class ParseLinksSpider(CrawlSpider):
     rules = (
         Rule(LinkExtractor(restrict_css='ul.dnrg'), callback='parse_item', follow=False),
     )
+    custom_settings = {
+    "TELNETCONSOLE_ENABLED": False,
+    "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+}
 
     @staticmethod
     def parse_item(response) -> Generator[dict[str, list[Any]], Any, None]:
