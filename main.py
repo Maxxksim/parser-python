@@ -1,4 +1,4 @@
-from Logs.logger import Logger
+from logs.logger import Logger
 from config.app_config import Config
 from controller.parsed_data_controller import ParsedDataController
 from database.db import Db

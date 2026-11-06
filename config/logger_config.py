@@ -3,5 +3,5 @@ from pydantic import Field
 
 
 class LoggerConfig(Settings):
-    logs_path : str = Field(default="Logs/logs.log")
+    logs_path : str = Field(default="logs/logs.log")
     log_mode : str = Field(default="debug")

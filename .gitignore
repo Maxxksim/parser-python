@@ -2,4 +2,4 @@
 .env
 .idea
 links.json
-Logs/logs.log
+logs/logs.log
