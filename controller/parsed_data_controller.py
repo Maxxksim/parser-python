@@ -22,6 +22,9 @@ class ParsedDataController:
         for questions in converted_data.values():
 
             for question_text, answers_with_lengths in questions.items():
+
+                if not answers_with_lengths:
+                    continue
                 question = self.__db.connection.scalar(
                     select(Question).where(Question.question == question_text)
                 )
