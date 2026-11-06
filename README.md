@@ -21,9 +21,9 @@ Start docker if you didn't it before
 1. Set DB_HOST in db in your .env file    
 2. Set REDIS_HOST in redis in your .env file    
 Then enter the commands in the terminal:  
-3. docker compose up app -d  
+3. docker compose up db redis -d  
 4. docker compose run --rm migrate  
-5. docker compose run --rm start-parser  
+5. docker compose run --rm start-parser    
 
 For Unix systems:  
 

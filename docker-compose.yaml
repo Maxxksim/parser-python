@@ -35,7 +35,7 @@ services:
     build:
       context: .
     working_dir: /app
-    entrypoint: [ 'python3', './database/migrate.py' ]
+    entrypoint: [ 'python3', 'migrate.py' ]
     depends_on:
       db:
         condition: service_healthy
